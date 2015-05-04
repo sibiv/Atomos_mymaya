@@ -1,0 +1,137 @@
+global string $gMainWindow;
+setParent $gMainWindow;
+
+
+global proc readGrammarFile()
+{
+string $filePath = `fileDialog`;
+$fileId = `fopen $filePath "r"`; 
+string $data = `fread $fileId $data` ;
+	 
+scrollField -e -cl scrollTextArea;
+scrollField -e -text $data scrollTextArea;
+}
+
+global proc passValues()
+{
+ string $grammar_value = `scrollField -q -text scrollTextArea`;
+ float $angle_value = `floatSliderGrp -q -v myAngleSlider`;
+ float $step_size = `floatSliderGrp -q -v myStepSizeSlider`;
+ int $number_iterations = `intSliderGrp -q -v myIterationsSlider`;
+ 
+ LSystemCmd -ss $step_size -i $number_iterations -a $angle_value -g $grammar_value;
+}
+
+global proc createGUI()
+{
+window -title "Call LSystem Command" -widthHeight 500 500 myWindow;
+columnLayout;
+ paneLayout -configuration "horizontal4";
+        scrollField -wordWrap true
+            -text "" -editable true scrollTextArea;
+ frameLayout -label "LSystem Parameters" -collapsable true -collapse false 
+          -borderStyle "etchedIn";
+                     intSliderGrp -label "Itertions" -field true 
+          -minValue 1.0 -maxValue 100.0
+          -value 1
+     myIterationsSlider;
+	   floatSliderGrp -label "Default Step Size" -field true 
+          -minValue 1.0 -maxValue 100.0
+          -value 1
+     myStepSizeSlider;
+	   floatSliderGrp -label "Default angle" -field true 
+          -minValue 0 -maxValue 360
+          -value 1
+     myAngleSlider;
+showWindow myWindow;
+
+button -label "browse" -command "readGrammarFile()";
+
+button -label "Create" -command "passValues()";
+button -label "Cancel" -command "exit()";
+}
+global proc createLSystemUI()
+{
+ // adds a new drop down menu
+    menu -l "Atomos" LMenu;
+ // add a item to the drop down menu
+ //   menuItem -l "Call LSystem Command" -command "createGUI()"; // then you can write the createGUI procedure for the window GUI in the ui.mel file
+ //   menuItem -l "Create LSystem Node" -command "createLSystemNode()";
+
+    menuItem -l "Launch Atomos" -command "createAGUI()";
+  //menuItem -l "Add selected as rigid body" -command "createRigidBodyNode()";
+}
+
+
+global proc createAGUI()
+{
+  //global string $iteratorSlider;
+  //global string $stepSlider;
+  //global string $angleSlider;
+  window -title "Atomos" -widthHeight 400 300 LWindow;
+  
+  //add code for deleting the window if it already exists?
+  
+  frameLayout -label "Test Bodies" -collapsable false;
+    gridLayout -numberOfColumns 6 -cellWidthHeight 80 20;
+      button -label "Rigid Body 1" -command "makeCube()";
+      button -label "Rigid Body 2";
+      button -label "Rigid Body 3";
+      button -label "Rigid Body 4";
+      button -label "Rigid Body 5";
+      button -label "Rigid Body 6";
+    setParent ..;
+  setParent ..;
+    
+  frameLayout -label "Controls" -collapsable false;
+    columnLayout;
+      intSliderGrp -label "Duration (sec.)" -field true
+        -minValue 1.0 -maxValue 999.0
+        -value 30
+      durationSlider;
+      floatSliderGrp -label "Time Step (sec.)" -field true
+        -minValue 0.0 -maxValue 2.0
+        -value 0.1
+      timestepSlider;
+    rowLayout
+      -numberOfColumns 2
+      -columnWidth2 120 120
+      -columnAlign2 "center" "center";
+      button -label "Run Simulation" -command "runSimulation" runButton;
+    setParent ..;
+  setParent ..;
+  showWindow LWindow;
+}
+
+global proc makeCube()
+{
+  polyCube -sx 5 -sy 5 -sz 5;  
+  particleFill -rs 10 -maxX 1 -maxY 1 -maxZ 1 -minX 0 -minY 0 -minZ 0 -pd 1 -cp;
+  //select -r nucleus1;
+  //doDelete;
+  //setParticleAttr -at velocity -vv 0 0 0 nParticle1;
+}
+
+
+global proc createLSystemNode()
+{
+if(`objExists LSystem1`) delete LSystem1;
+createNode transform -n LSystem1;
+if(`objExists LSystemShape1`) delete LSystemShape1;
+createNode mesh -n LSystemShape1 -p LSystem1;
+sets -add initialShadingGroup LSystemShape1;
+if(`objExists LSystemNode1`) delete LSystemNode1;
+createNode LSystemNode -n LSystemNode1;
+connectAttr time1.outTime LSystemNode1.time;
+connectAttr LSystemNode1.outputMesh LSystemShape1.inMesh;
+}
+global proc exit()
+{
+deleteUI myWindow;
+}
+
+global proc deleteLSystemUI()
+{
+ deleteUI -menu LMenu;
+ deleteUI myWindow;
+}
